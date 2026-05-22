@@ -1,0 +1,2837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>40个设计冷知识 · Design Trivia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ============ 主题色(默认:🖋 墨水经典) ============ */
+    --ink:#0a0a0b;
+    --ink-rgb:10,10,11;
+    --paper:#f1efea;
+    --paper-rgb:241,239,234;
+    --paper-tint:#e8e5de;
+    --ink-tint:#18181a;
+
+    /* ============ 字体(跨主题固定) ============ */
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --serif-en:"Playfair Display","Source Serif 4",Georgia,serif;
+    --serif-body-en:"Source Serif 4",Georgia,serif;
+    --serif-zh:"Noto Serif SC",source-han-serif-sc,serif;
+    --sans-zh:"Noto Sans SC",source-han-sans-sc,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--paper);font-family:var(--sans-zh);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+  /* ============ WebGL 双背景 ============ */
+  canvas.bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block;transition:opacity 1.2s ease}
+  canvas#bg-light{opacity:0}
+  canvas#bg-dark{opacity:1}
+  body.light-bg canvas#bg-light{opacity:1}
+  body.light-bg canvas#bg-dark{opacity:0}
+  body.low-power canvas.bg{display:none!important}
+
+  /* ============ Deck 容器 + 翻页 ============ */
+  #deck{position:fixed;inset:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .9s cubic-bezier(.77,0,.175,1);z-index:10;will-change:transform}
+  .slide{width:100vw;height:100vh;flex:0 0 100vw;position:relative;padding:6vh 6vw 10vh 6vw;display:flex;flex-direction:column;overflow:hidden}
+  .slide.light{color:var(--ink);background:var(--paper)}
+  .slide.dark{color:var(--paper);background:var(--ink)}
+
+  /* 默认页：遮罩较厚，保证文字可读 */
+  .slide::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;transition:background .7s ease}
+  .slide.light::before{background:rgba(var(--paper-rgb),.78);backdrop-filter:blur(3px)}
+  .slide.dark::before{background:rgba(var(--ink-rgb),.78);backdrop-filter:blur(3px)}
+  /* Hero 页：遮罩大幅降低，让 WebGL 背景明显透出 */
+  .slide.hero.light::before{background:rgba(var(--paper-rgb),.16);backdrop-filter:none}
+  .slide.hero.dark::before{background:rgba(var(--ink-rgb),.12);backdrop-filter:none}
+  /* Hero 页顶底微弱渐隐，保证 chrome/foot 区域可读 */
+  .slide.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+  .slide.hero.light::after{background:linear-gradient(180deg,rgba(var(--paper-rgb),.28) 0%,rgba(var(--paper-rgb),0) 14%,rgba(var(--paper-rgb),0) 86%,rgba(var(--paper-rgb),.28) 100%)}
+  .slide.hero.dark::after{background:linear-gradient(180deg,rgba(var(--ink-rgb),.32) 0%,rgba(var(--ink-rgb),0) 14%,rgba(var(--ink-rgb),0) 86%,rgba(var(--ink-rgb),.32) 100%)}
+
+  /* ============ Magazine chrome：顶部 meta + 底部 foot ============ */
+  .chrome{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.7}
+  .chrome .left,.chrome .right{display:flex;gap:2.4em;align-items:center}
+  .chrome .sep{width:40px;height:1px;background:currentColor;opacity:.4}
+  .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.55}
+  .foot .title{font-family:var(--serif-zh);font-weight:400;letter-spacing:.05em;text-transform:none;opacity:.75;font-size:13px}
+
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;padding:6px 14px;border:1px solid currentColor;opacity:.85}
+  .rule{width:100%;height:1px;background:currentColor;opacity:.25;margin:3vh 0}
+  .rule.v{width:1px;height:100%;margin:0}
+
+  /* ============ 字体规则 ============ */
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-bottom:2.6vh}
+  .display{font-family:var(--serif-en);font-weight:700;font-size:11vw;line-height:.92;letter-spacing:-.025em}
+  .display-zh{font-family:var(--serif-zh);font-weight:700;font-size:7.8vw;line-height:1.04;letter-spacing:-.005em}
+  .h1-zh{font-family:var(--serif-zh);font-weight:700;font-size:4.6vw;line-height:1.12;letter-spacing:-.005em}
+  .h2-zh{font-family:var(--serif-zh);font-weight:600;font-size:3.2vw;line-height:1.2;letter-spacing:0}
+  .h3-zh{font-family:var(--serif-zh);font-weight:500;font-size:1.9vw;line-height:1.35}
+  .body-zh{font-family:var(--sans-zh);font-weight:400;font-size:max(15px,1.22vw);line-height:1.75;opacity:.82;letter-spacing:.01em}
+  .body-serif{font-family:var(--serif-zh);font-weight:400;font-size:max(15px,1.3vw);line-height:1.65;opacity:.88}
+  .lead{font-family:var(--serif-zh);font-weight:400;font-size:1.9vw;line-height:1.4;opacity:.85}
+  .meta{font-family:var(--mono);font-size:max(11px,.88vw);letter-spacing:.16em;text-transform:uppercase;opacity:.6}
+  .big-num{font-family:var(--serif-en);font-weight:800;font-size:10vw;line-height:.85;letter-spacing:-.03em;font-feature-settings:"tnum"}
+  .mid-num{font-family:var(--serif-en);font-weight:700;font-size:5.5vw;line-height:.88;letter-spacing:-.02em;font-feature-settings:"tnum"}
+  .ghost{font-family:var(--serif-en);font-weight:900;font-size:34vw;line-height:.8;opacity:.06;letter-spacing:-.04em;position:absolute;font-feature-settings:"tnum"}
+  em{font-style:italic;font-family:var(--serif-en)}
+  .en{font-family:var(--serif-en);font-style:italic;font-weight:500}
+
+  /* ============ 布局工具 ============ */
+  .col{display:flex;flex-direction:column;gap:2.4vh}
+  .row{display:flex;align-items:center;gap:3vw}
+  .grid-6{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:4vw 6vw;flex:1;align-content:center;padding:2vh 0}
+  .grid-9{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3vh 4vw;flex:1;align-content:center}
+  .grid-4{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:4vh 6vw;flex:1;align-content:center}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:4vw;flex:1;align-content:center}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:4vw;flex:1;align-items:center}
+  .split-55{display:grid;grid-template-columns:55fr 45fr;gap:5vw;flex:1;align-items:stretch}
+  .fill{flex:1}
+  .center{align-items:center;justify-content:center;text-align:center}
+  .bottom-left{position:absolute;left:6vw;bottom:9vh;max-width:50vw}
+  .bottom-right{position:absolute;right:6vw;bottom:9vh;max-width:50vw;text-align:right}
+  .top-right{position:absolute;right:6vw;top:6vh;text-align:right}
+
+  /* ============ Stat（数字矩阵） ============ */
+  .stat{display:flex;flex-direction:column;gap:1vh;align-items:flex-start}
+  .stat .n{font-family:var(--serif-en);font-weight:800;font-size:8vw;line-height:.88;letter-spacing:-.03em;font-feature-settings:"tnum"}
+  .stat .l{font-family:var(--sans-zh);font-size:max(13px,1.05vw);opacity:.7;margin-top:1vh;font-weight:400;line-height:1.5}
+  .stat .m{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.5;margin-bottom:.2vh}
+
+  /* ============ Callout（引用框） ============ */
+  .callout{padding:3vh 2.4vw;border-left:3px solid currentColor;position:relative;font-family:var(--serif-zh);font-size:max(15px,1.2vw);line-height:1.55;opacity:.92}
+  .slide.light .callout{background:rgba(var(--ink-rgb),.05)}
+  .slide.dark .callout{background:rgba(var(--paper-rgb),.06)}
+  .callout .cite{display:block;margin-top:1.6vh;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.6}
+  .callout .q-big{font-family:var(--serif-zh);font-weight:600;font-size:max(17px,1.6vw);line-height:1.42}
+
+  /* ============ Platform（平台卡） ============ */
+  .plat{display:flex;flex-direction:column;justify-content:flex-end;padding:2vh 0;border-top:1px solid currentColor;border-color:rgba(127,127,127,.35)}
+  .plat .name{font-family:var(--serif-zh);font-weight:700;font-size:1.8vw;margin-bottom:.6vh}
+  .plat .nb{font-family:var(--serif-en);font-weight:700;font-size:3.2vw;letter-spacing:-.02em;line-height:1;font-feature-settings:"tnum"}
+  .plat .sub{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;opacity:.55;margin-top:.6vh}
+  .plat .fill{font-family:var(--sans-zh);font-weight:300;font-size:2.4vw;opacity:.28;letter-spacing:-.01em;line-height:1}
+
+  /* ============ Rowline（表格行） ============ */
+  .rowline{display:grid;grid-template-columns:1fr 2fr 1fr;gap:2vw;padding:2.2vh 0;border-top:1px solid currentColor;align-items:center;border-color:rgba(127,127,127,.25)}
+  .rowline:last-child{border-bottom:1px solid currentColor;border-color:rgba(127,127,127,.25)}
+  .rowline .k{font-family:var(--serif-zh);font-weight:700;font-size:1.7vw}
+  .rowline .v{font-family:var(--sans-zh);font-weight:400;font-size:max(14px,1.2vw);opacity:.85;line-height:1.55}
+  .rowline .m{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.6;justify-self:end}
+
+  /* ============ Pillar（支柱卡片） ============ */
+  .pillar{display:flex;flex-direction:column;gap:1.8vh}
+  .pillar .ic{font-family:var(--serif-en);font-style:italic;font-size:2.6vw;opacity:.45;font-weight:400}
+  .pillar .ic svg{width:2.8vw;height:2.8vw;stroke-width:1.2;opacity:.7}
+  .pillar .t{font-family:var(--serif-zh);font-weight:700;font-size:2.4vw;line-height:1.1}
+  .pillar .d{font-family:var(--sans-zh);font-weight:400;font-size:max(14px,1.1vw);opacity:.76;line-height:1.6}
+
+  /* ============ Signature / Highlight ============ */
+  .sign{font-family:var(--serif-en);font-style:italic;font-weight:500;font-size:2vw;opacity:.7}
+  .hi{position:relative;display:inline}
+  .slide.dark .hi::after{content:"";position:absolute;left:-.1em;right:-.1em;bottom:-.05em;height:.28em;background:rgba(var(--paper-rgb),.15);z-index:-1}
+  .slide.light .hi::after{content:"";position:absolute;left:-.1em;right:-.1em;bottom:-.05em;height:.28em;background:rgba(var(--ink-rgb),.08);z-index:-1}
+
+  /* ============ Icons（Lucide via CDN） ============ */
+  .ico{width:1em;height:1em;display:inline-block;vertical-align:-.12em;stroke:currentColor;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  .ico-lg,.ico-md,.ico-sm{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+  .ico-lg{width:2.6vw;height:2.6vw;stroke-width:1.2;display:inline-block}
+  .ico-md{width:1.8vw;height:1.8vw;stroke-width:1.3;display:inline-block;vertical-align:-.4em}
+  .ico-sm{width:1.1vw;height:1.1vw;stroke-width:1.4;display:inline-block;vertical-align:-.15em;opacity:.7}
+
+  /* ============ 图片占位（虚线框，提示设计师位置） ============ */
+  .img-slot{border:1.5px dashed rgba(127,127,127,.4);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1vh;padding:2vh 2vw;font-family:var(--mono);font-size:10px;letter-spacing:.28em;text-transform:uppercase;opacity:.55;position:relative;aspect-ratio:16/9;width:100%;max-height:56vh;margin-inline:auto;box-sizing:border-box}
+  .img-slot::before{content:"";position:absolute;inset:8px;border:1px solid currentColor;opacity:.2}
+  .img-slot .plus{font-size:2vw;font-weight:300;opacity:.5;letter-spacing:0}
+  .img-slot .label{position:relative;z-index:2;text-align:center}
+  .img-slot.r-4x3{aspect-ratio:4/3}
+  .img-slot.r-3x2{aspect-ratio:3/2}
+  .img-slot.r-1x1{aspect-ratio:1/1}
+
+  /* ============ 图片实填框（3:4比例 + 替换按钮） ============ */
+  .frame-img{overflow:hidden;position:relative;background:rgba(0,0,0,.04);box-sizing:border-box;width:100%;border-radius:4px;aspect-ratio:3/4;max-height:70vh;margin:auto 0}
+  .slide.dark .frame-img{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12)}
+  .frame-img > img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:filter .3s ease}
+  .frame-img.fit-contain > img{object-fit:contain;object-position:center center}
+  
+  /* 图片悬停时显示替换按钮 */
+  .frame-img .img-replace-btn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);opacity:0;transition:opacity .3s ease;cursor:pointer;z-index:10}
+  .frame-img:hover .img-replace-btn{opacity:1}
+  .frame-img .img-replace-btn span{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#fff;padding:12px 24px;border:1px solid rgba(255,255,255,.5);border-radius:4px;background:rgba(0,0,0,.3);pointer-events:none}
+  
+  /* 隐藏的文件输入 */
+  .img-file-input{display:none}
+  
+  /* 垂直居中布局 */
+  figure.tile{display:flex;flex-direction:column;margin:0;min-width:0;height:100%;justify-content:center}
+  figure.tile > .frame-img{flex:0 0 auto}
+  .frame-cap{display:flex;justify-content:space-between;align-items:baseline;gap:1vw;margin-top:.8vh;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.72}
+  .frame-cap .pf{font-family:var(--serif-zh);font-weight:600;font-size:max(13px,1vw);letter-spacing:.04em;text-transform:none;opacity:.94}
+  .frame-cap .nb{font-family:var(--serif-en);font-style:italic;font-size:max(15px,1.2vw);letter-spacing:.02em;text-transform:none;opacity:.88}
+  .frame-cap .idx{font-family:var(--mono);opacity:.5}
+
+  /* ============ 导航 ============ */
+  #nav{position:fixed;left:50%;bottom:2.6vh;transform:translateX(-50%);z-index:30;display:flex;gap:10px;padding:8px 14px;border-radius:999px;background:rgba(0,0,0,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);align-items:center}
+  #nav .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:all .3s ease;border:0;padding:0}
+  #nav .dot:hover{background:rgba(255,255,255,.5);transform:scale(1.15)}
+  #nav .dot.active{background:rgba(255,255,255,.95);width:22px;border-radius:999px}
+  body.light-bg #nav{background:rgba(255,255,255,.25)}
+  body.light-bg #nav .dot{background:rgba(var(--ink-rgb),.25)}
+  body.light-bg #nav .dot.active{background:rgba(var(--ink-rgb),.9)}
+  #nav-btn-prev, #nav-btn-next{background:none;border:none;color:inherit;font-size:16px;cursor:pointer;padding:4px 8px;opacity:.7;transition:opacity .2s}
+  #nav-btn-prev:hover, #nav-btn-next:hover{opacity:1}
+  #hint{position:fixed;bottom:3vh;right:3vw;z-index:30;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.4;mix-blend-mode:difference;color:#aaa}
+  body.low-power #hint{opacity:.72;color:var(--paper);mix-blend-mode:normal}
+  body.light-bg.low-power #hint{color:var(--ink)}
+
+  /* ============ Layouts API ============ */
+  .frame{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .frame.grid-2-7-5,
+  .frame.grid-2-6-6,
+  .frame.grid-2-8-4,
+  .frame.grid-3-3,
+  .frame.grid-6{display:grid}
+
+  .h-hero{
+    font-family:var(--serif-zh);
+    font-weight:900;
+    font-size:10vw;
+    line-height:.96;
+    letter-spacing:-.02em;
+  }
+  .h-xl{
+    font-family:var(--serif-zh);
+    font-weight:700;
+    font-size:6.2vw;
+    line-height:1.08;
+    letter-spacing:-.01em;
+  }
+  .h-sub{
+    font-family:var(--serif-zh);
+    font-weight:500;
+    font-size:3.1vw;
+    line-height:1.25;
+    letter-spacing:0;
+    opacity:.7;
+  }
+  .h-md{
+    font-family:var(--serif-zh);
+    font-weight:600;
+    font-size:2.3vw;
+    line-height:1.3;
+  }
+  .h-hero-en,.h-xl-en{font-family:var(--serif-en);letter-spacing:-.025em}
+
+  .lead{
+    font-family:var(--serif-zh);
+    font-weight:400;
+    font-size:1.75vw;
+    line-height:1.5;
+    opacity:.86;
+  }
+
+  .meta-row{
+    display:flex;
+    gap:1.2em;
+    align-items:baseline;
+    flex-wrap:wrap;
+    font-family:var(--mono);
+    font-size:max(12px,.92vw);
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    opacity:.6;
+  }
+
+  .stat-card{
+    display:flex;
+    flex-direction:column;
+    gap:.8vh;
+    align-items:flex-start;
+    padding-top:1.6vh;
+    border-top:1px solid currentColor;
+    border-color:rgba(127,127,127,.3);
+  }
+  .stat-card .stat-label{
+    font-family:var(--mono);
+    font-size:max(10px,.78vw);
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    opacity:.55;
+  }
+  .stat-card .stat-nb{
+    font-family:var(--serif-en);
+    font-weight:800;
+    font-size:5.8vw;
+    line-height:.9;
+    letter-spacing:-.03em;
+    font-feature-settings:"tnum";
+    margin-top:.4vh;
+  }
+  .stat-card .stat-nb .stat-unit{
+    font-family:var(--serif-zh);
+    font-weight:500;
+    font-size:.38em;
+    letter-spacing:0;
+    opacity:.72;
+    margin-left:.14em;
+  }
+  .stat-card .stat-note{
+    font-family:var(--sans-zh);
+    font-weight:400;
+    font-size:max(13px,1.05vw);
+    line-height:1.5;
+    opacity:.72;
+    margin-top:.6vh;
+  }
+  .grid-4 .stat-card .stat-nb{font-size:5vw}
+  .grid-3 .stat-card .stat-nb{font-size:6.8vw}
+
+  .pipeline-section{
+    margin-top:4.4vh;
+    padding-top:2.8vh;
+    border-top:1px dashed rgba(127,127,127,.32);
+  }
+  .pipeline-section:first-of-type{
+    border-top:0;
+    padding-top:0;
+    margin-top:3vh;
+  }
+  .pipeline-label{
+    font-family:var(--mono);
+    font-size:max(11px,.85vw);
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    opacity:.62;
+    margin-bottom:2.2vh;
+  }
+  .pipeline{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:1.2vw;
+  }
+  .pipeline[data-cols="3"]{grid-template-columns:repeat(3,1fr)}
+  .pipeline[data-cols="4"]{grid-template-columns:repeat(4,1fr)}
+  .pipeline[data-cols="6"]{grid-template-columns:repeat(6,1fr)}
+  .step{
+    display:flex;
+    flex-direction:column;
+    gap:.8vh;
+    padding-top:1.4vh;
+    border-top:1px solid currentColor;
+    border-color:rgba(127,127,127,.35);
+  }
+  .step-nb{
+    font-family:var(--serif-en);
+    font-style:italic;
+    font-weight:500;
+    font-size:1.15vw;
+    opacity:.45;
+  }
+  .step-title{
+    font-family:var(--sans-zh);
+    font-weight:700;
+    font-size:1.55vw;
+    letter-spacing:.01em;
+    line-height:1.2;
+  }
+  .step-desc{
+    font-family:var(--sans-zh);
+    font-weight:400;
+    font-size:max(12px,.95vw);
+    line-height:1.45;
+    opacity:.72;
+  }
+
+  .grid-2-7-5{display:grid;grid-template-columns:7fr 5fr;gap:3vw 4vh;align-items:center}
+  .grid-2-6-6{display:grid;grid-template-columns:1fr 1fr;gap:3vw 4vh;align-items:start}
+  .grid-2-8-4{display:grid;grid-template-columns:8fr 4fr;gap:3vw 4vh;align-items:start}
+  .grid-3-3{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-auto-rows:minmax(0,1fr);
+    gap:2.4vh 2vw;
+  }
+
+  figure.frame-img{margin:0;display:flex;flex-direction:column;min-width:0}
+  .img-cap{
+    display:block;
+    margin-top:.8vh;
+    font-family:var(--mono);
+    font-size:max(10px,.8vw);
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    opacity:.6;
+  }
+  .callout-src{
+    display:block;
+    margin-top:1.6vh;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    opacity:.6;
+  }
+
+  .chrome{font-family:var(--mono);font-size:max(11px,.78vw);letter-spacing:.2em;text-transform:uppercase;opacity:.62}
+  .foot{font-family:var(--mono);font-size:max(11px,.78vw);letter-spacing:.18em;text-transform:uppercase;opacity:.5}
+
+  /* ============ 动效系统 ============ */
+  [data-anim]{opacity:1}
+  body.motion-ready [data-anim]{opacity:0}
+  body.motion-ready [data-anim="left"]{transform:translateX(-24px)}
+  body.motion-ready [data-anim="right"]{transform:translateX(24px)}
+  body.motion-ready [data-anim="line"]{opacity:0;transform:translateY(10px)}
+  body.motion-ready [data-animate="pipeline"] [data-anim]{opacity:.15}
+  body.low-power #deck{transition:none!important}
+  body.low-power *,
+  body.low-power *::before,
+  body.low-power *::after{animation:none!important;transition:none!important}
+  body.low-power.motion-ready [data-anim],
+  body.low-power [data-anim]{opacity:1!important;transform:none!important}
+
+  /* ============ 视频卡片组件 ============ */
+  .video-card{
+    position:relative;width:min(800px,70vw);margin:0 auto;border-radius:16px;overflow:hidden;
+    box-shadow:0 4px 24px rgba(0,0,0,.18),0 1.5px 6px rgba(0,0,0,.10);background:#000;
+    transition:box-shadow .35s ease,transform .35s ease;
+  }
+  .video-card:hover{box-shadow:0 8px 40px rgba(0,0,0,.28),0 2px 10px rgba(0,0,0,.14);transform:translateY(-2px)}
+  .video-card video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;outline:none;cursor:pointer}
+  .video-card .play-overlay{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.25);opacity:1;transition:opacity .3s ease;pointer-events:none;
+  }
+  .video-card.playing .play-overlay{opacity:0}
+  .video-card .play-btn{
+    width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.88);
+    box-shadow:0 2px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;
+    transition:transform .25s ease;pointer-events:auto;cursor:pointer;
+  }
+  .video-card .play-btn::after{
+    content:'';width:0;height:0;border-style:solid;
+    border-width:12px 0 12px 20px;border-color:transparent transparent transparent #333;
+    margin-left:4px;
+  }
+  .video-card:hover .play-btn{transform:scale(1.08)}
+  .slide.dark .video-card{box-shadow:0 4px 24px rgba(0,0,0,.35),0 1.5px 6px rgba(0,0,0,.20)}
+  .video-card video:focus-visible{outline:2px solid rgba(100,180,255,.7);outline-offset:2px}
+
+  /* ============ 右下角播放视频按钮 ============ */
+  .video-play-btn{
+    position:absolute;
+    right:10px;
+    bottom:30px;
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    background:rgba(255,255,255,.9);
+    border:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 2px 12px rgba(0,0,0,.3);
+    transition:transform .2s ease,background .2s ease;
+    z-index:10;
+  }
+  .video-play-btn:hover{
+    transform:scale(1.1);
+    background:#fff;
+  }
+  .video-play-btn svg{
+    width:24px;
+    height:24px;
+    color:#333;
+    margin-left:2px;
+  }
+
+  /* ============ 视频弹窗 ============ */
+  .video-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.9);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+    opacity:0;
+    visibility:hidden;
+    transition:opacity .3s ease,visibility .3s ease;
+  }
+  .video-modal.active{
+    opacity:1;
+    visibility:visible;
+  }
+  .video-modal-content{
+    position:relative;
+    max-width:90vw;
+    max-height:90vh;
+  }
+  .video-modal video{
+    max-width:100%;
+    max-height:90vh;
+    border-radius:8px;
+  }
+  .video-modal-close{
+    position:absolute;
+    top:-50px;
+    right:0;
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:rgba(255,255,255,.2);
+    border:none;
+    color:#fff;
+    font-size:24px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .2s ease;
+  }
+  .video-modal-close:hover{
+    background:rgba(255,255,255,.3);
+  }
+
+  /* ---------- 响应式降级 ---------- */
+  @media (max-width:900px){
+    .display{font-size:16vw}
+    .display-zh{font-size:12vw}
+    .h1-zh{font-size:7vw}
+    .h-hero{font-size:14vw}
+    .h-xl{font-size:9vw}
+    .pipeline{grid-template-columns:repeat(2,1fr)}
+    .grid-2-7-5,.grid-2-6-6,.grid-2-8-4{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<script>
+  (function(){
+    const KEY = 'guizang-ppt-low-power';
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const stored = localStorage.getItem(KEY);
+    window.__lowPowerMode = stored === '1' || (stored === null && reduced);
+    function updateHint(){
+      const hint = document.getElementById('hint');
+      if(hint) hint.textContent = '点击按钮翻页 · ESC 索引';
+    }
+    window.__setLowPowerMode = function(on, opts={}){
+      window.__lowPowerMode = !!on;
+      document.body.classList.toggle('low-power', window.__lowPowerMode);
+      if(opts.persist !== false) localStorage.setItem(KEY, window.__lowPowerMode ? '1' : '0');
+      if(window.__lowPowerMode && document.getAnimations){
+        document.getAnimations().forEach(a=>a.cancel());
+      }
+      updateHint();
+      dispatchEvent(new CustomEvent('ppt-low-power-change', {detail:{on:window.__lowPowerMode}}));
+      if(window.__playSlide) window.__playSlide(window.__currentSlideIndex || 0);
+    };
+    document.body.classList.toggle('low-power', window.__lowPowerMode);
+    addEventListener('DOMContentLoaded', updateHint, {once:true});
+  })();
+</script>
+
+<canvas id="bg-dark" class="bg"></canvas>
+<canvas id="bg-light" class="bg"></canvas>
+<div id="hint">点击按钮翻页 · ESC 索引</div>
+
+<div id="deck">
+
+<!-- ============================================================
+     40个设计冷知识 · Design Trivia
+     ============================================================ -->
+
+<!-- ====== 第1页 - 封面 (hero dark) ====== -->
+<section class="slide hero dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">UX/UI 设计分享 · 60分钟</div>
+    <div class="right"><span class="sep"></span>Design Trivia</div>
+  </div>
+  <div class="frame center" data-animate="hero">
+    <div class="kicker" data-anim>UX/UI 设计分享 · 60分钟</div>
+    <div class="h-hero" data-anim>41个设计冷知识</div>
+    <div class="h-sub" style="margin-top:2vh" data-anim>那些藏在日常里的设计密码</div>
+    <div class="lead" style="max-width:52vw;margin-top:3vh" data-anim>从交通标志到宜家说明书，从Helvetica到乐高积木——设计远比你想象的更有趣。</div>
+    <div class="meta-row" style="margin-top:4vh" data-anim>Design Trivia · 2026</div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>01 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第2页 - 案例1: 交通标志 (light) ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 01 · 色彩密码</div>
+    <div class="right"><span class="sep"></span>Case 01</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 01</div>
+      <div class="h-xl" data-anim="left">交通标志的颜色</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">红色</span> = 进化遗留，人类对红色反应比意识快0.1秒</div>
+        <div class="body-zh"><span class="hi">黄色</span> = 人眼最敏感波长570-590纳米</div>
+        <div class="body-zh"><span class="hi">绿色</span> = 黑暗中几乎看不见，高速出口用绿色</div>
+        <div class="body-zh"><span class="hi">蓝色/棕色</span> = 信息/旅游功能</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">日本直到1970年代才接受绿色作为"前行"色</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/01-traffic-signs.jpg" alt="交通标志">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">交通标志</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>02 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第3页 - 案例2: Helvetica (dark) ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 02 · 字体传奇</div>
+    <div class="right"><span class="sep"></span>Case 02</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 02</div>
+      <div class="h-xl" data-anim="left">Helvetica</div>
+      <div class="h-sub" data-anim="left">一款"透明"的字体</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">1957年瑞士设计师在咖啡馆随手画出</div>
+        <div class="body-zh">设计哲学：消除个性，让内容说话</div>
+        <div class="body-zh">IBM、美国航空、宝马、微软都用它</div>
+        <div class="body-zh">争议：成功到"消失"进背景里</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">2007年《Helvetica》上映，设计圈分裂成两派</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/02-helvetica.jpg" alt="Helvetica字体">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">Helvetica字体</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>03 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第4页 - 案例3: 可乐瓶 (light) ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 03 · 瓶身进化</div>
+    <div class="right"><span class="sep"></span>Case 03</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 03</div>
+      <div class="h-xl" data-anim="left">可乐瓶的百年进化</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">1890s</span> 直筒玻璃瓶——和啤酒瓶没区别</div>
+        <div class="body-zh"><span class="hi">1915年</span> 鲁特玻璃瓶——从可可豆获得灵感</div>
+        <div class="body-zh"><span class="hi">2009年</span> 塑料曲线瓶是对鲁特瓶的致敬</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">消费者货架停留2-3秒，60%购买决策是无意识的</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/03-cola-bottle.jpg" alt="可乐瓶进化">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">可乐瓶进化</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>04 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第5页 - 案例4: 蓝鲸 (dark) ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 04 · 色彩错觉</div>
+    <div class="right"><span class="sep"></span>Case 04</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 04</div>
+      <div class="h-xl" data-anim="left">蓝鲸其实是灰色</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">水下看是蓝灰色，水面看是深蓝色，上岸后是棕褐色</div>
+        <div class="body-zh">iPhone"太空灰"在不同光线呈现不同色调</div>
+        <div class="body-zh">汽车"珍珠白"在阴影里偏蓝</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">设计师工作的不是"选颜色"，而是"设计颜色在特定场景下的呈现"</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/04-blue-whale.jpg" alt="蓝鲸">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">蓝鲸</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>05 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第6页 - 案例5: Emoji (light) ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 05 · 标准之争</div>
+    <div class="right"><span class="sep"></span>Case 05</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 05</div>
+      <div class="h-xl" data-anim="left">Emoji的标准化战争</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">苹果、Google、微软、三星各画不同emoji</div>
+        <div class="body-zh">Unicode联盟被迫介入制定统一编码</div>
+        <div class="body-zh">"统一样子"本身是政治博弈</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">2019年emoji成为全球增长最快的"语言"，但样子依然不完全统一</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center;position:relative" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/05-emoji-war.jpg" alt="Emoji标准化">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">Emoji标准化</span></figcaption>
+      </figure>
+      <!-- 右下角播放视频按钮 -->
+      <button class="video-play-btn" onclick="openVideoModal('videos/05-emoji-war.mp4')" title="播放视频">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>06 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第7页 - 幕封 Act II (hero light) ====== -->
+<section class="slide hero light" data-theme="light">
+  <div class="chrome">
+    <div class="left">Act II</div>
+    <div class="right"><span class="sep"></span>设计的隐藏逻辑</div>
+  </div>
+  <div class="frame center" data-animate="hero">
+    <div class="kicker" data-anim>Act II</div>
+    <div class="h-hero" style="font-size:8.5vw" data-anim>设计的隐藏逻辑</div>
+    <div class="lead" style="max-width:48vw;margin-top:3vh" data-anim>从奥运五环到iPhone闹钟，每个细节都有故事。</div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>07 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第8页 - 案例6: 奥运五环 (dark) ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 06 · 五环密码</div>
+    <div class="right"><span class="sep"></span>Case 06</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 06</div>
+      <div class="h-xl" data-anim="left">奥运五环的颜色密码</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">蓝、黄、黑、绿、红五环</div>
+        <div class="body-zh">选择依据：当时全世界国旗上出现的所有颜色</div>
+        <div class="body-zh">五环+白色背景=所有国家国旗的颜色</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">无论你来自哪国，你的国旗颜色都在里面</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/06-olympic-rings.jpg" alt="奥运五环">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">奥运五环</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>08 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第9页 - 案例7: iPhone闹钟 (light) ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 07 · 时间密码</div>
+    <div class="right"><span class="sep"></span>Case 07</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 07</div>
+      <div class="h-xl" data-anim="left">为什么是9:41？</div>
+      <div class="h-sub" data-anim="left">iPhone闹钟的秘密</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">致敬历史</span> —— 代表 2007 年 iPhone 誕生的時刻</div>
+        <div class="body-zh"><span class="hi">9:41 與發表會節奏對齊</span>：Apple 內部會精準設計 Keynote 時間軸，通常在演講約 40 分鐘後才揭曉核心新品</div>
+        <div class="body-zh">产品图时间几乎都是10:15（两指针最对称）</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">為什麼不是其他時間？這是 Apple 對產品發表會節奏的精準掌控</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/07-iphone-941.jpg" alt="iPhone 9:41">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">iPhone 9:41</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>09 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第10页 - 案例8: 书脊文字 (dark) ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 08 · 排版之谜</div>
+    <div class="right"><span class="sep"></span>Case 08</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 08</div>
+      <div class="h-xl" data-anim="left">书脊上的字</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">实用逻辑</span>：书架上的书，读者视线只能看到书脊，文字正对视角才能快速识别书名、作者。这也是为什么书脊文字大多是竖排，横排仅用于超厚书籍。</div>
+        <div class="body-zh"><span class="hi">历史溯源</span>：古腾堡活字印刷时代，书籍多为厚重的手抄本复刻，书脊是装订后才形成的。早期印刷品的书脊文字排版，直接延续了中世纪抄本的陈列习惯 —— 书脊朝外，文字方向统一，方便修道院和图书馆的管理。</div>
+        <div class="body-zh"><span class="hi">东西方差异</span>：中文书脊传统竖排从上到下，现代也有采用横排（仅厚书适用）；西文书脊传统是从下往上读，源于早期图书馆书籍平放在架上的陈列习惯，立起来后就变成了 "倒着读"。</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">为什么书脊文字要这么排？书永远是"展示状态"而非"阅读状态"</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/08-book-spine.jpg" alt="书脊文字">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">书脊文字</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>10 / 45</div>
+  </div>
+</section>
+
+<!-- ====== 第11页 - 案例9: 机场字体 (light) - 第一页 ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 09 · 功能字体</div>
+    <div class="right"><span class="sep"></span>Case 09</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 09</div>
+      <div class="h-xl" data-anim="left">机场字体不普通</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">设计特点 1：宽字距</span> —— 防止旅客快速扫视、移动视线时，字母互相粘连，无法清晰识别。</div>
+        <div class="body-zh"><span class="hi">设计特点 2：独特字形</span> —— 特意区分易混淆字符，比如 I、l、1 或 0、O，避免看错登机口、航班号等关键信息。</div>
+        <div class="body-zh"><span class="hi">设计特点 3：无衬线</span> —— 去掉了衬线字体的装饰性笔画，远距离、快速移动时也能看清轮廓。</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">关键结论：换成 Times New Roman 这类衬线字体，远距离识别率直接下降 40%。</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/09-airport-font.jpg" alt="机场字体">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">机场字体设计特点</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>11 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第11b页 - 案例9: 机场字体 (light) - 第二页 ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 09 · 功能字体</div>
+    <div class="right"><span class="sep"></span>Case 09-2</div>
+  </div>
+  <div class="frame" data-animate="directional">
+    <div class="col" style="gap:2vh">
+      <div class="kicker" data-anim="left">Case 09-2</div>
+      <div class="h-xl" style="font-size:4vw" data-anim="left">为什么机场字体这么 "讲究"？</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="body-zh" data-anim="right">机场的字体设计，本质上是为 "高压力、高速度、远距离" 场景服务的功能性设计，每一个细节都在解决实际问题：</div>
+      <div class="grid-3" style="gap:2vw;margin-top:2vh">
+        <div class="pillar" data-anim="right">
+          <div class="ic">01</div>
+          <div class="t">宽字距：对抗 "动态模糊"</div>
+          <div class="d">旅客在机场里大多处于行走、奔跑的状态，视线扫过指示牌的时间可能不到 0.5 秒。如果字距太近，视觉暂留效应会让字母 "粘在一起"，比如 RN 会被误看成 M，宽字距能有效避免这种误读。</div>
+        </div>
+        <div class="pillar" data-anim="right">
+          <div class="ic">02</div>
+          <div class="t">独特字形：杜绝致命错误</div>
+          <div class="d">机场里的航班号、登机口编号、航站楼编号，都是 "一字之差就会误机" 的关键信息。比如 0（数字零）和 O（字母 O），1（数字一）、I（大写 i）和 l（小写 L），在普通字体里几乎一模一样；机场字体通过调整笔画，比如给数字 0 加斜杠、给 1 加底座、给 I 加顶线，让这些字符一眼就能区分。</div>
+        </div>
+        <div class="pillar" data-anim="right">
+          <div class="ic">03</div>
+          <div class="t">无衬线：为远距离而生</div>
+          <div class="d">衬线字体（比如 Times New Roman）的衬线笔画，在远距离、低分辨率下会变成模糊的 "毛边"，干扰主体识别；而无衬线字体的笔画均匀、轮廓简洁，哪怕在几十米外、灯光复杂的环境里，也能快速识别。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>12 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第11c页 - 案例9: 机场字体 (light) - 第三页：常用字体 ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 09 · 功能字体</div>
+    <div class="right"><span class="sep"></span>Case 09-3</div>
+  </div>
+  <div class="frame" data-animate="directional">
+    <div class="col" style="gap:1.5vh">
+      <div class="kicker" data-anim="left">Case 09-3</div>
+      <div class="h-xl" style="font-size:3.5vw" data-anim="left">现在机场常用的字体有哪些？</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="grid-2-6-6" style="gap:2vw">
+        <div class="col" data-anim="right">
+          <div class="pipeline-section" style="margin-bottom:1.5vh">
+            <div class="pipeline-label" style="font-size:1.6vh;margin-bottom:0.8vh">国际通用标杆</div>
+            <div class="body-zh" style="font-size:1.4vh;line-height:1.5"><span class="hi">Frutiger</span>：专为巴黎戴高乐机场设计，是机场字体的 "祖师爷"。属于人文主义无衬线体，既有清晰的无衬线轮廓，又带一点柔和的曲线，既适合远距离识别，也能适配现代机场的视觉风格。戴高乐机场、香港机场、新加坡樟宜机场等全球大量机场都在使用或衍生版本。</div>
+          </div>
+          <div class="pipeline-section">
+            <div class="pipeline-label" style="font-size:1.6vh;margin-bottom:0.8vh">后续 "接班人"</div>
+            <div class="body-zh" style="font-size:1.4vh;line-height:1.5"><span class="hi">Frutiger Next / Avenir Next</span>：很多新机场会用 Frutiger 的升级版本，优化了数字和易混淆字符的区分度，适配 LED 电子屏的显示效果。</div>
+          </div>
+        </div>
+        <div class="col" data-anim="right">
+          <div class="pipeline-section" style="margin-bottom:1.5vh">
+            <div class="pipeline-label" style="font-size:1.6vh;margin-bottom:0.8vh">国内机场的主流选择</div>
+            <div class="body-zh" style="font-size:1.4vh;line-height:1.5"><span class="hi">英文</span>：多采用 Frutiger、Helvetica Neue、Arial Bold，部分机场也会用专门优化的 Tahoma 字体；<br><span class="hi">中文</span>：优先使用黑体（如思源黑体、方正兰亭黑），笔画均匀、字重清晰，和英文搭配也很协调，符合民航《民用机场公共信息标识系统设置规范》的要求。</div>
+          </div>
+          <div class="pipeline-section">
+            <div class="pipeline-label" style="font-size:1.6vh;margin-bottom:0.8vh">其他专用导视字体</div>
+            <div class="body-zh" style="font-size:1.4vh;line-height:1.5">部分机场会用定制字体，比如伦敦希思罗机场的 <span class="hi">Heathrow Sans</span>，专门为机场导视优化了笔画和间距；高速公路、地铁等交通场景的字体，和机场字体设计逻辑是相通的，比如英国公路用的 Transport 字体，也是为了高速移动场景设计的高识别度字体。</div>
+          </div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:auto;padding:1.5vh 2vw" data-anim="right">
+        <span class="q-big" style="font-size:1.6vh">延伸冷知识：机场字体的识别率是经过严格测试的，设计师会模拟旅客不同行走速度、不同距离、不同光线环境，测试字体的识别速度和准确率。这种 "功能性优先" 的字体设计，也延伸到了医院的导视、交通标识、紧急出口的文字，都在遵循同样的 "高识别度" 原则。</span>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>13 / 47</div>
+  </div>
+</section>
+
+<!-- ====== 第12页 - 案例10: 再来一瓶 (dark) ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 10 · 交互演变</div>
+    <div class="right"><span class="sep"></span>Case 10</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 10</div>
+      <div class="h-xl" data-anim="left">"再来一瓶"消失了</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">原因 1：成本倒挂</span> —— 瓶盖的制作、回收、兑奖、物流成本，甚至比 "再来一瓶" 本身的利润还高。</div>
+        <div class="body-zh"><span class="hi">原因 2：防伪漏洞</span> —— 早期防伪技术不成熟，假瓶盖泛滥，企业实际兑奖量远超预期，造成巨额亏损。</div>
+        <div class="body-zh"><span class="hi">原因 3：数字替代</span> —— 扫码领红包比实物兑奖更便宜、更可控，企业能精准控制成本和投放节奏。</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">关键结论：从 "物理惊喜" 到 "数字惊喜"，设计从实物转向数据的缩影。</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center;position:relative" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/10-bottle-cap.jpg" alt="再来一瓶">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">再来一瓶</span></figcaption>
+      </figure>
+      <!-- 右下角播放视频按钮 -->
+      <button class="video-play-btn" onclick="openVideoModal('videos/10-bottle-cap.mp4')" title="播放视频">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>14 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第13页 - 幕封 Act III (hero dark) ====== -->
+<section class="slide hero dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">Act III</div>
+    <div class="right"><span class="sep"></span>品牌与日常</div>
+  </div>
+  <div class="frame center" data-animate="hero">
+    <div class="kicker" data-anim>Act III</div>
+    <div class="h-hero" style="font-size:8.5vw" data-anim>品牌与日常</div>
+    <div class="lead" style="max-width:48vw;margin-top:3vh" data-anim>从麦当劳拱门到宜家说明书，设计藏在每个角落。</div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>15 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第14页 - 案例11: 麦当劳拱门 (light) ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 11 · 品牌误读</div>
+    <div class="right"><span class="sep"></span>Case 11</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 11</div>
+      <div class="h-xl" data-anim="left">金色拱门不是M</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">起源（1952 年）</span> —— 设计师在加州餐厅设计中，画了两个半圆，灵感是为了让餐厅造型更醒目，当时是 "半圆顶" 结构，并不是字母 M。</div>
+        <div class="body-zh"><span class="hi">演变（1968 年）</span> —— 品牌后来才把拱门设计调整为 M 形，但 "金拱门" 这个名字已经在消费者中传开了。</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">关键结论：今天的 M 形拱门，恰好成了一个天才的品牌记忆符号。</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/11-mcdonalds-arch.jpg" alt="麦当劳拱门">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">麦当劳拱门</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>16 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第15页 - 案例12: 铅笔黄色 (dark) ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 12 · 颜色历史</div>
+    <div class="right"><span class="sep"></span>Case 12</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 12</div>
+      <div class="h-xl" data-anim="left">铅笔为什么是黄色</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">起源背景</span> —— 19 世纪末，美国铅笔商从中国进口石墨，当时中国的石墨被认为是世界顶级品质。</div>
+        <div class="body-zh"><span class="hi">文化象征</span> —— 黄色在欧美文化中象征皇室、财富，铅笔厂商用黄色来暗示 "高品质、尊贵感"。</div>
+        <div class="body-zh"><span class="hi">实用功能</span> —— 黄色在深色木板桌面上最容易被看见，降低丢失概率，也方便快速取用。</div>
+        <div class="body-zh"><span class="hi">补充信息</span> —— 欧洲铅笔颜色五花八门 —— 德国常用绿色（比如施德楼（Staedtler）的经典绿杆铅笔，源于德国传统的工匠配色），意大利常用蓝色（比如辉柏嘉的早期蓝杆铅笔，是品牌的地域文化符号），只有黄色成了全球通用的主流。</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">关键结论：黄色铅笔的故事，本质上是一次文化符号 + 实用功能 + 跟风效应的完美营销。</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/12-yellow-pencil.jpg" alt="黄色铅笔">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">黄色铅笔</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>17 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第16页 - 案例13: 啤酒瓶绿色 (light) ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 13 · 材质密码</div>
+    <div class="right"><span class="sep"></span>Case 13</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 13</div>
+      <div class="h-xl" data-anim="left">啤酒瓶的绿色</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">17世纪绿色玻璃是"杂质玻璃"</div>
+        <div class="body-zh">啤酒怕光，紫外线让啤酒氧化</div>
+        <div class="body-zh">棕色瓶效果最好（透光率4%），绿色次之（20%）</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">百威被迫从玻璃瓶转用铁罐，为保持"高端感"印上绿色</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/13-green-beer.jpg" alt="绿色啤酒瓶">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">绿色啤酒瓶</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>18 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第17页 - 案例14: 乐高积木 (dark) ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 14 · 精密工程</div>
+    <div class="right"><span class="sep"></span>Case 14</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 14</div>
+      <div class="h-xl" data-anim="left">0.005毫米的秘密</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">每块乐高积木公差0.005毫米，比头发丝还细</div>
+        <div class="body-zh">1958年改进设计后所有积木都能完美咬合</div>
+        <div class="body-zh">一块2x4积木最高能叠44层（约112米）</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">相当于30层楼的高度而不变形</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/14-lego-bricks.jpg" alt="乐高积木">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">乐高积木</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>19 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第18页 - 案例15: 米高梅狮子 (light) ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 15 · Logo进化</div>
+    <div class="right"><span class="sep"></span>Case 15</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 15</div>
+      <div class="h-xl" data-anim="left">18 个版本的米高梅狮子</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">出品与起源</span> —— 米高梅（MGM）从 1924 年至今，一共使用了 7 只不同的真实狮子作为品牌片头形象，衍生出了 18 种不同的片头版本。创始人之一霍华德・迪茨是哥伦比亚大学校友，校队吉祥物为狮子，因此将狮子定为品牌标志。</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">关键结论：从实拍狮到数字形象，米高梅狮早已成为深入人心的品牌符号。</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center;position:relative" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/15-mgm-lion.jpg" alt="米高梅狮子">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">米高梅狮子</span></figcaption>
+      </figure>
+      <!-- 右下角播放视频按钮 -->
+      <button class="video-play-btn" onclick="openVideoModal('videos/15-mgm-lion.mp4')" title="播放视频">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>20 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第19页 - 幕封 Act IV (hero light) ====== -->
+<section class="slide hero light" data-theme="light">
+  <div class="chrome">
+    <div class="left">Act IV</div>
+    <div class="right"><span class="sep"></span>细节的力量</div>
+  </div>
+  <div class="frame center" data-animate="hero">
+    <div class="kicker" data-anim>Act IV</div>
+    <div class="h-hero" style="font-size:8.5vw" data-anim>细节的力量</div>
+    <div class="lead" style="max-width:48vw;margin-top:3vh" data-anim>公共标识、包装体验、货币设计——细节决定一切。</div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>21 / 46</div>
+  </div>
+</section>
+
+<!-- ====== 第20页 - 案例16: 厕所标识 (dark) - 第一页 ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 16 · 标识争议</div>
+    <div class="right"><span class="sep"></span>Case 16-1</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 16-1</div>
+      <div class="h-xl" data-anim="left">厕所标识的性别争议</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">起源背景</span> —— 19 世纪公厕无统一标识，靠文字或习俗区分。1960 年代，英国铁路、东京奥运会为服务跨国旅客，先后推出标准化厕所图形符号，以 "裤装 / 裙装" 区分男女，成为全球通用范式。</div>
+        <div class="body-zh"><span class="hi">为什么用 "裙子 / 裤子" 区分？</span><br>1960 年代，"女性穿裙子、男性穿裤装" 是全球主流的服饰文化，这种区分方式简单直观，几乎没有歧义；设计师的核心目标是 "跨语言识别"，所以选择了当时最普世的性别服饰符号，而非刻意强化性别刻板印象。</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">这套沿用近 60 年的设计，是时代服饰文化与跨语言识别需求的产物，并非单纯巧合</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center;position:relative" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/16-restroom-sign.jpg" alt="厕所标识">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">厕所标识</span></figcaption>
+      </figure>
+      <!-- 右下角播放视频按钮 -->
+      <button class="video-play-btn" onclick="openVideoModal('videos/16-restroom-sign.mp4')" title="播放视频">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>22 / 47</div>
+  </div>
+</section>
+
+<!-- ====== 第20b页 - 案例16: 厕所标识 (dark) - 第二页 ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 16 · 标识争议</div>
+    <div class="right"><span class="sep"></span>Case 16-2</div>
+  </div>
+  <div class="frame" data-animate="directional">
+    <div class="col" style="gap:2vh">
+      <div class="kicker" data-anim="left">Case 16-2</div>
+      <div class="h-xl" style="font-size:4vw" data-anim="left">标识设计争议与未来</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh"><span class="hi">标识设计争议</span> —— 早期以 "裙摆 = 女性、裤装 = 男性" 的服饰文化区分性别，如今服饰性别边界模糊，这种符号易强化刻板印象，也给跨性别、非二元群体带来困扰，引发争议。</div>
+        <div class="body-zh"><span class="hi">结论</span> —— 这套沿用近 60 年的设计，是时代服饰文化与跨语言识别需求的产物，并非单纯巧合；如今正被中性、功能化的新标识逐步迭代。</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">从 "性别符号" 到 "功能符号"，厕所标识正在经历一场静默的设计革命</span>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>23 / 47</div>
+  </div>
+</section>
+
+<!-- ====== 第21页 - 案例17: 苹果开盒 (light) ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 17 · 仪式设计</div>
+    <div class="right"><span class="sep"></span>Case 17</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 17</div>
+      <div class="h-xl" data-anim="left">开盒的仪式感</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">包装工程师KPI包括开盒声音、阻力均匀度</div>
+        <div class="body-zh">iPhone包装盒磁铁位置精确计算</div>
+        <div class="body-zh">2001年乔布斯抱怨白色不够"纯"，团队花6周重新调色</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">苹果卖的不是产品，是"拆礼物的体验"</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/17-apple-unboxing.jpg" alt="苹果开盒">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">苹果开盒</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>24 / 47</div>
+  </div>
+</section>
+
+<!-- ====== 第22页 - 案例18: 人民币大数字 (dark) ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 18 · 货币设计</div>
+    <div class="right"><span class="sep"></span>Case 18</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 18</div>
+      <div class="h-xl" data-anim="left">人民币的大数字</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">大数字为快速识别真伪</div>
+        <div class="body-zh">盲人靠触摸大数字分辨币值</div>
+        <div class="body-zh">人民币大数字 > 美元 > 英镑 > 欧元</div>
+        <div class="body-zh">2015年版盲文改成3个相同符号</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">专家发现盲人根本不用盲文系统，而是靠大小和材质辨别</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/18-rmb-numbers.jpg" alt="人民币大数字">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">人民币大数字</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>25 / 47</div>
+  </div>
+</section>
+
+<!-- ====== 第23页 - 案例19: 红色电话亭 (light) ====== -->
+<section class="slide light" data-theme="light">
+  <div class="chrome">
+    <div class="left">案例 19 · 国民遗产</div>
+    <div class="right"><span class="sep"></span>Case 19</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 19</div>
+      <div class="h-xl" data-anim="left">皇室弃子</div>
+      <div class="h-sub" data-anim="left">英国红色电话亭</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">1926年由Giles Gilbert Scott设计</div>
+        <div class="body-zh">最初是银色/灰色，伦敦为配合皇家马车改漆红色</div>
+        <div class="body-zh">1950年代差点被全面淘汰，公众抗议保住</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">全英国只剩不到5000个在使用</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/19-red-phonebox.jpg" alt="红色电话亭">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">红色电话亭</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>26 / 47</div>
+  </div>
+</section>
+
+<!-- ====== 第24页 - 案例20: 宜家说明书 (dark) ====== -->
+<section class="slide dark" data-theme="dark">
+  <div class="chrome">
+    <div class="left">案例 20 · 无字设计</div>
+    <div class="right"><span class="sep"></span>Case 20</div>
+  </div>
+  <div class="frame grid-2-7-5" data-animate="directional">
+    <div class="col">
+      <div class="kicker" data-anim="left">Case 20</div>
+      <div class="h-xl" data-anim="left">宜家说明书</div>
+      <div class="h-sub" data-anim="left">为什么没有文字？</div>
+      <div class="rule" data-anim="divider"></div>
+      <div class="col" style="gap:1.8vh" data-anim="right">
+        <div class="body-zh">1965年发现翻译各语言成本太高</div>
+        <div class="body-zh">人对图像的理解比文字快6倍</div>
+        <div class="body-zh">第一页是组装完成的俯视图</div>
+      </div>
+      <div class="callout" style="margin-top:auto" data-anim="right">
+        <span class="q-big">让用户先看到"终点"，产生"这么简单"的信心</span>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center;position:relative" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/20-ikea-manual.jpg" alt="宜家说明书">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">宜家说明书</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">41个设计冷知识</div>
+    <div>27 / 47</div>
+  </div>
+</section>
+
+<!-- ====== 第25页 - 案例21（light）：信用卡尺寸 ====== -->
+<section class="slide light" id="s25" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 21 · 标准化</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 21</div>
+      <h1 class="h-xl">信用卡的尺寸</h1>
+      <ul class="list">
+        <li>所有信用卡都是85.60mm × 53.98mm</li>
+        <li>设计于1970年代，为了适配当时的数据机</li>
+        <li>这个尺寸来自早期的电话卡标准</li>
+      </ul>
+      <div class="callout">
+        <p>比身份证、门禁卡、银行卡都大一点点——为了让你优先找到它</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/21-credit-card.jpg" alt="信用卡">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">信用卡</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">26 / 47</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第26页 - 案例22-1（dark）：点赞按钮 ====== -->
+<section class="slide dark" id="s26" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 22 · 图标起源</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 22</div>
+      <h1 class="h-xl">点赞按钮：拇指朝上的故事</h1>
+      <ul class="list">
+        <li><strong>起源：</strong>2009年由Facebook设计师Brent Chumley设计，灵感源自古罗马角斗场的"拇指向上"手势</li>
+        <li><strong>演变：</strong>最初是星星图标，后改为拇指造型</li>
+        <li><strong>影响力：</strong>每天被点击超过60亿次，是互联网上最具辨识度的交互符号之一</li>
+      </ul>
+      <div class="callout">
+        <p>一个手势改变了互联网社交方式</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/22-facebook-like.jpg" alt="点赞按钮">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">点赞按钮</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">27 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第27页 - 案例22-2（dark）：点赞按钮深度解析 ====== -->
+<section class="slide dark" id="s26-2" data-theme="dark" data-layout="text-only">
+  <div class="chrome" data-anim="left"><span>案例 22 · 深度解析</span></div>
+  <div class="grid-2-7-5" style="align-items:flex-start">
+    <div class="col" data-anim="left">
+      <h2 class="h-l" style="font-size:2.2rem;margin-bottom:1.5vh">真实背景与深度拓展</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2vh 3vw;margin-top:2vh">
+        <div>
+          <h3 style="font-size:1.3rem;color:var(--accent);margin-bottom:0.8vh">1. 起源：从"星星"到"拇指"的迭代</h3>
+          <ul class="list" style="font-size:0.95rem">
+            <li>早期Facebook没有"点赞"功能，用户只能通过评论表达态度</li>
+            <li>2007年团队曾测试过"喜欢"按钮，用星星作为图标，但用户反馈不直观</li>
+            <li>2009年，设计师Brent Chumley改用大众认知度极高的"拇指向上"手势</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:1.3rem;color:var(--accent);margin-bottom:0.8vh">2. 古罗马手势的真实含义</h3>
+          <ul class="list" style="font-size:0.95rem">
+            <li>古罗马角斗场中，观众手势决定角斗士生死</li>
+            <li>拇指向下代表"处死"，拇指收起代表"饶命"</li>
+            <li>"拇指向上"在流行文化中被简化为"肯定、支持"的符号</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:1.3rem;color:var(--accent);margin-bottom:0.8vh">3. 为什么"拇指"比"星星"更成功？</h3>
+          <ul class="list" style="font-size:0.95rem">
+            <li><strong>跨文化通用：</strong>全球绝大多数文化都能理解的积极符号</li>
+            <li><strong>交互反馈强：</strong>简洁造型加点击动效，给用户明确的"已完成"反馈</li>
+            <li><strong>轻量化传播：</strong>适配所有屏幕尺寸，缩小到几毫米也能被识别</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:1.3rem;color:var(--accent);margin-bottom:0.8vh">4. 延伸影响：点赞如何改变了互联网？</h3>
+          <ul class="list" style="font-size:0.95rem">
+            <li>降低评论门槛，用户不用打字就能表达态度</li>
+            <li>Twitter、Instagram、小红书等平台沿用类似点赞符号</li>
+            <li>衍生出"点赞经济"，点赞数成为内容热度的重要指标</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">28 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第27页 - 案例23（light）：QWERTY键盘 ====== -->
+<section class="slide light" id="s27" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 23 · 打字机遗产</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 23</div>
+      <h1 class="h-xl">QWERTY键盘</h1>
+      <ul class="list">
+        <li>1873年由Christopher Sholes设计</li>
+        <li>目的是降低打字速度——防止机械卡键</li>
+        <li>最常用的字母被故意分散开</li>
+      </ul>
+      <div class="callout">
+        <p>我们每天都在用的"反效率"设计</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/23-qwerty.jpg" alt="QWERTY键盘">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">QWERTY键盘</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">29 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第28页 - 案例24（dark）：灭火器红色 - 第一页 ====== -->
+<section class="slide dark" id="s28" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 24 · 安全色</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 24-1</div>
+      <h1 class="h-xl">灭火器为什么是红色</h1>
+      <ul class="list">
+        <li><span class="hi">科学原理</span> —— 红色在可见光谱中波长最长，烟雾中穿透力最强，远距离也能被看见</li>
+        <li><span class="hi">心理联想</span> —— 红色与危险、紧急形成强关联，能快速唤起警觉</li>
+        <li><span class="hi">标准规定</span> —— ISO 标准明确：红色必须占灭火器表面积至少 80%</li>
+      </ul>
+      <div class="callout">
+        <p>红色灭火器：科学原理 + 心理暗示 + 国际标准的完美结合</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/24-fire-extinguisher.jpg" alt="灭火器">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">红色灭火器</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">30 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第29页 - 案例24（dark）：灭火器红色 - 第二页 深度拓展 ====== -->
+<section class="slide dark" id="s29" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 24 · 安全色</span></div>
+  <div class="frame" data-animate="directional">
+    <div class="col" style="gap:1.5vh">
+      <div class="kicker" data-anim="left">Case 24-2</div>
+      <h1 class="h-xl" style="font-size:3.5vw" data-anim="left">深度拓展：红色灭火器的真实逻辑</h1>
+      <div class="grid-2-6-6" style="gap:2vw;margin-top:1vh">
+        <div class="col" data-anim="right">
+          <div class="pipeline-section" style="margin-bottom:1.5vh">
+            <div class="pipeline-label" style="font-size:1.6vh;margin-bottom:0.8vh">1. 光学原理：红色是 "火场里最亮的星"</div>
+            <div class="body-zh" style="font-size:1.4vh;line-height:1.5">红色是可见光中波长最长的颜色（约 620-750nm），在烟雾、灰尘、低光环境下，散射更少、穿透力更强，哪怕在浓烟弥漫的火场，也能被快速识别。相比之下，蓝色、绿色等短波长颜色，在烟雾中会被大量散射，远距离几乎看不见。</div>
+          </div>
+          <div class="pipeline-section">
+            <div class="pipeline-label" style="font-size:1.6vh;margin-bottom:0.8vh">2. 心理学与安全规范的双重绑定</div>
+            <div class="body-zh" style="font-size:1.4vh;line-height:1.5">全球通用的安全色标准中，红色被定义为 "禁止、危险、紧急"，这种认知已经刻入大众的安全习惯。红色灭火器与红色消防栓、消防通道标识形成统一的视觉系统，能让使用者在混乱的环境中快速定位整套灭火设施。</div>
+          </div>
+        </div>
+        <div class="col" data-anim="right">
+          <div class="pipeline-section" style="margin-bottom:1.5vh">
+            <div class="pipeline-label" style="font-size:1.6vh;margin-bottom:0.8vh">3. ISO 标准的硬性要求：为什么是 "80% 红色"？</div>
+            <div class="body-zh" style="font-size:1.4vh;line-height:1.5">国际标准化组织（ISO 7010 / ISO 11601）明确规定，灭火器的主体颜色必须为红色，且红色面积不得少于 80%。剩余 20% 可用于标注灭火器类型（如 ABC 干粉、二氧化碳等），例如绿色环代表水基型、蓝色环代表二氧化碳型。</div>
+          </div>
+          <div class="pipeline-section">
+            <div class="pipeline-label" style="font-size:1.6vh;margin-bottom:0.8vh">4. 补充冷知识：也有非红色灭火器？</div>
+            <div class="body-zh" style="font-size:1.4vh;line-height:1.5">部分特殊场景会使用其他颜色的灭火器，比如：金属加工厂常用的 D 类灭火器，会用黄色外壳；洁净室、机房用的二氧化碳灭火器，部分地区会用黑色，但仍需搭配红色标识。这些特殊灭火器也必须带有醒目的红色标识，以保证紧急情况下的识别性。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">31 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第31页 - 案例25（light）：Nike Swoosh ====== -->
+<section class="slide light" id="s31" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 26 · 35美元的设计</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 26</div>
+      <h1 class="h-xl">Nike Swoosh</h1>
+      <ul class="list">
+        <li>1971年由设计学生Carolyn Davidson创作</li>
+        <li>仅收费35美元（当时约2小时工资）</li>
+        <li>象征希腊胜利女神Nike的翅膀</li>
+      </ul>
+      <div class="callout">
+        <p>后来Nike赠予她一股股票，现在价值超过100万美元</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/25-nike-swoosh.jpg" alt="Nike Swoosh">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">Nike Swoosh</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">34 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第32页 - 幕封 Act VI（hero light） ====== -->
+<section class="slide hero light" id="s34" data-theme="hero light" data-layout="hero">
+  <div class="hero-center">
+    <div class="kicker" data-anim="up">Act VI</div>
+    <div class="h-hero" style="font-size:8.5vw" data-anim>日常物品</div>
+    <div class="lead" data-anim="up" style="margin-top:2vh">从门把手到井盖，身边的每个设计都有故事。</div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">35 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第32页 - 案例26（dark）：Google颜色 ====== -->
+<section class="slide dark" id="s32" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 27 · 色彩策略</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 27</div>
+      <h1 class="h-xl">Google 的颜色</h1>
+      <ul class="list">
+        <li><strong>色彩基础：</strong>使用红、黄、蓝三原色，搭配绿色作为唯一的"非原色"</li>
+        <li><strong>设计寓意：</strong>绿色代表创新突破，打破了三原色的规律排列；颜色顺序遵循光谱波长递减逻辑</li>
+        <li><strong>起源彩蛋：</strong>1998年Google的第一个Logo，是创始人用WordArt制作的</li>
+      </ul>
+      <div class="callout">
+        <p>三原色中的一点绿，是打破规则的创新宣言</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/26-google-colors.jpg" alt="Google颜色">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">Google颜色</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">34 / 49</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第33页 - 案例27（light）：门把手圆形 ====== -->
+<section class="slide light" id="s35" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 28 · 人体工学</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 28</div>
+      <h1 class="h-xl">门把手的圆形</h1>
+      <ul class="list">
+        <li>圆形没有棱角，不会勾住衣物</li>
+        <li>任何角度都能轻松抓握</li>
+        <li>1878年由Osbourn Dorsey发明并获得专利</li>
+      </ul>
+      <div class="callout">
+        <p>在此之前，门用的是拉手或推板</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/27-doorknob.jpg" alt="门把手">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">门把手</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">36 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第34页 - 案例28（dark）：Amazon微笑箭头 ====== -->
+<section class="slide dark" id="s36" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 29 · 隐藏信息</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 29</div>
+      <h1 class="h-xl">Amazon的微笑</h1>
+      <ul class="list">
+        <li>箭头从A指向Z——表示"从A到Z什么都有"</li>
+        <li>箭头形状像是一个微笑</li>
+        <li>2000年重新设计，去掉".com"强调品牌</li>
+      </ul>
+      <div class="callout">
+        <p>贝索斯亲自参与了logo的每一次修改</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/28-amazon-smile.jpg" alt="Amazon微笑">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">Amazon微笑</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">37 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第35页 - 案例29（light）：回收标志 ====== -->
+<section class="slide light" id="s37" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 30 · 环保符号</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 30</div>
+      <h1 class="h-xl">回收标志</h1>
+      <ul class="list">
+        <li>1970年由Gary Anderson设计（当时还是大学生）</li>
+        <li>三个箭头代表：收集-加工-再利用</li>
+        <li>莫比乌斯环形状象征无限循环</li>
+      </ul>
+      <div class="callout">
+        <p>设计比赛奖金只有2500美元，但成了全球通用符号</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/29-recycling.jpg" alt="回收标志">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">回收标志</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">38 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第36页 - 案例30（dark）：电梯关门键 ====== -->
+<section class="slide dark" id="s38" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 31 · 安慰剂设计</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 31</div>
+      <h1 class="h-xl">电梯关门键，大多是 "假的"</h1>
+      <ul class="list">
+        <li>大多数电梯的关门键，在正常运行时没有实际作用，按了也不会让门更快关上</li>
+        <li>根据国家电梯制造标准，电梯门完全打开后，会设置3-5秒不等的强制等待时间🕰️，这段时间里，你按破天都没用</li>
+        <li>它存在的意义，是给焦虑的乘客一个 "掌控感"，通过动作缓解等待的焦躁情绪，是心理学上的 "安慰剂设计"</li>
+        <li>只有在维修、特殊模式下，这个按键才会被激活</li>
+      </ul>
+      <div class="callout">
+        <p>你狂按的关门键，可能只是个 "心理安慰按钮"</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/30-elevator-close-btn.jpg" alt="电梯关门键">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">电梯关门键</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">39 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第37页 - 幕封 Act VII（hero dark） ====== -->
+<section class="slide hero dark" id="s39" data-theme="hero dark" data-layout="hero">
+  <div class="hero-center">
+    <div class="kicker" data-anim="up">Act VII</div>
+    <div class="h-hero" style="font-size:8.5vw" data-anim>形状与功能</div>
+    <div class="lead" data-anim="up" style="margin-top:2vh">从圆形井盖到椭圆舷窗，形状背后的工程学。</div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">40 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第38页 - 案例31（light）：井盖圆形 ====== -->
+<section class="slide light" id="s40" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 32 · 几何智慧</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 32</div>
+      <h1 class="h-xl">井盖为什么是圆形</h1>
+      <ul class="list">
+        <li>圆形井盖不会掉入圆形井口（直径恒定）</li>
+        <li>方形井盖对角线比边长长，可能掉下去</li>
+        <li>圆形可以滚动搬运，不需要抬起</li>
+      </ul>
+      <div class="callout">
+        <p>这是微软面试的经典题目</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/31-manhole.jpg" alt="井盖">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">井盖</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">41 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第39页 - 案例32（dark）：星巴克Logo进化史 ====== -->
+<section class="slide dark" id="s41" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 33 · 品牌进化</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 33</div>
+      <h1 class="h-xl">星巴克Logo：海妖变绿标进化史</h1>
+      <ul class="list">
+        <li><strong>1971年初代Logo：</strong>设计师Terry Heckler创作，灵感取自15世纪诺尔斯木刻双尾海妖</li>
+        <li><strong>神话寓意：</strong>借古老海洋神话呼应品牌海上咖啡贸易的起源，赋予冒险探索的精神内核</li>
+        <li><strong>视觉简化：</strong>伴随品牌扩张，Logo持续简化以适配门店、杯身等各类场景</li>
+        <li><strong>绿色确立：</strong>1987年确立标志性绿色为主色，成为品牌体验的视觉锚点</li>
+      </ul>
+      <div class="callout">
+        <p>从复古海妖徽章到极简绿标，传承品牌文化基因与创新品牌身份的完美平衡</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/32-starbucks.jpg" alt="星巴克Logo进化">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">星巴克Logo进化</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">32 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第40页 - 案例33（light）：飞机舷窗椭圆 ====== -->
+<section class="slide light" id="s42" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 34 · 航空工程</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 34</div>
+      <h1 class="h-xl">飞机舷窗的椭圆</h1>
+      <ul class="list">
+        <li>1950年代彗星客机方形舷窗导致坠毁</li>
+        <li>方形角落产生应力集中，导致金属疲劳</li>
+        <li>椭圆形将应力均匀分散</li>
+      </ul>
+      <div class="callout">
+        <p>这个设计教训来自70条人命</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/33-airplane-window.jpg" alt="飞机舷窗">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">飞机舷窗</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">33 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第41页 - 案例34（dark）：蓝牙符号 ====== -->
+<section class="slide dark" id="s43" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 35 · 维京遗产</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 35</div>
+      <h1 class="h-xl">蓝牙的维京符号</h1>
+      <ul class="list">
+        <li>蓝牙名称来自丹麦国王Harald Bluetooth</li>
+        <li>符号由两个北欧符文组成：Hagall + Bjarkan</li>
+        <li>代表国王名字的首字母HB</li>
+      </ul>
+      <div class="callout">
+        <p>一个1000年前的符号成了现代科技标志</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/34-bluetooth.jpg" alt="蓝牙符号">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">蓝牙符号</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">44 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第42页 - 案例35-1（light）：筷子 - 东方哲学与实用智慧 ====== -->
+<section class="slide light" id="s44" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 36 · 东方智慧</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 36</div>
+      <h1 class="h-xl">藏在餐具里的东方哲学与实用智慧</h1>
+      <ul class="list">
+        <li><strong>文化寓意：</strong>上圆下方，圆象征天，方象征地（呼应"天圆地方"的传统宇宙观）</li>
+        <li><strong>结构设计：</strong>锥形设计，夹取端细、手持端粗，兼顾实用性与力学平衡</li>
+        <li><strong>传统制式：</strong>长度多为7寸6分，代表"人的七情六欲"，暗含古人对人性的思考</li>
+      </ul>
+      <div class="callout">
+        <p>3000年前的设计哲学，至今仍在使用</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/35-chopsticks.jpg" alt="筷子">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">筷子</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">42 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第43页 - 案例35-2（light）：筷子 - 设计背后的实用与文化逻辑 ====== -->
+<section class="slide light" id="s44-2" data-theme="light" data-layout="text-only">
+  <div class="chrome" data-anim="left"><span>案例 36 · 深度解析</span></div>
+  <div class="grid-2-7-5" style="align-items:flex-start">
+    <div class="col" data-anim="left">
+      <h2 class="h-l" style="font-size:2.2rem;margin-bottom:1.5vh">设计背后的实用与文化逻辑</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2vh 3vw;margin-top:2vh">
+        <div>
+          <h3 style="font-size:1.3rem;color:var(--accent);margin-bottom:0.8vh">「上圆下方」：不止是象征</h3>
+          <ul class="list" style="font-size:0.95rem">
+            <li><strong>手持端方形：</strong>防滑防滚，放在桌上不会轻易滑落</li>
+            <li><strong>夹取端圆形：</strong>方便夹取米粒、蔬菜等细小食物</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:1.3rem;color:var(--accent);margin-bottom:0.8vh">「锥形设计」：力学优化</h3>
+          <ul class="list" style="font-size:0.95rem">
+            <li><strong>前端纤细：</strong>集中力量精准夹取，哪怕是滑溜的豆子也能稳稳夹住</li>
+            <li><strong>后端粗壮：</strong>提供更好握持感和杠杆支点，大幅降低手部发力</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:1.3rem;color:var(--accent);margin-bottom:0.8vh">「7寸6分」：文化解读</h3>
+          <ul class="list" style="font-size:0.95rem">
+            <li>古人认为筷子是"连接人与食物的媒介"</li>
+            <li>7寸6分对应"七情六欲"，寓意吃饭时要节制欲望</li>
+            <li>同时适配成人手掌尺寸，是人体工学与文化的结合</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:1.3rem;color:var(--accent);margin-bottom:0.8vh">延伸冷知识</h3>
+          <ul class="list" style="font-size:0.95rem">
+            <li>筷子起源于商周时期，最初用树枝、骨片制成</li>
+            <li>禁忌（插筷、敲碗）与"天圆地方"象征有关</li>
+            <li>插筷像祭祀用的香，敲碗被视为乞丐行为</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">46 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第43页 - 幕封 Act VIII（hero light） ====== -->
+<section class="slide hero light" id="s45" data-theme="hero light" data-layout="hero">
+  <div class="hero-center">
+    <div class="kicker" data-anim="up">Act VIII</div>
+    <div class="h-hero" style="font-size:8.5vw" data-anim>科技与习惯</div>
+    <div class="lead" data-anim="up" style="margin-top:2vh">从WiFi到YouTube，科技如何塑造我们的日常。</div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">47 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第40页 - 案例36（dark）：WiFi信号图标 ====== -->
+<section class="slide dark" id="s39-case36" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 37 · 无线符号</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 37</div>
+      <h1 class="h-xl">WiFi信号图标</h1>
+      <ul class="list">
+        <li>1999年由Wi-Fi联盟推出</li>
+        <li>设计灵感来自无线电波的扇形传播</li>
+        <li>扇形弧线越多，信号越强</li>
+      </ul>
+      <div class="callout">
+        <p>这个图标最初并没有官方标准，是设计师的共识</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/36-wifi.jpg" alt="WiFi信号图标">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">WiFi信号图标</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">42 / 48</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第41页 - 案例37（light）：交通灯垂直排列 ====== -->
+<section class="slide light" id="s40-case37" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 38 · 视觉层级</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 38</div>
+      <h1 class="h-xl">交通灯垂直排列</h1>
+      <ul class="list">
+        <li>红在上、绿在下：符合"危险在上"的视觉习惯</li>
+        <li>色盲患者可以通过位置判断</li>
+        <li>1912年美国盐湖城首次安装三色信号灯</li>
+      </ul>
+      <div class="callout">
+        <p>水平排列的交通灯，红灯通常在左</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/37-traffic-light.jpg" alt="交通灯">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">交通灯</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">43 / 48</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第42页 - 案例38（dark）：Command键符号 ====== -->
+<section class="slide dark" id="s41-case38" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 39 · 苹果符号</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 39</div>
+      <h1 class="h-xl">Command键符号</h1>
+      <ul class="list">
+        <li>符号来自瑞典的露营地标志（表示"景点"）</li>
+        <li>1984年Steve Jobs觉得这个符号很酷</li>
+        <li>取代了原来的苹果logo键</li>
+      </ul>
+      <div class="callout">
+        <p>这个符号在Unicode中叫"PLACE OF INTEREST SIGN"</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/38-command-key.jpg" alt="Command键符号">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">Command键符号</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">43 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第43页 - 案例39（light）：牙膏尾部色条 ====== -->
+<section class="slide light" id="s42-case39" data-theme="light" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 40 · 生产标记</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 40</div>
+      <h1 class="h-xl">牙膏尾部的色条</h1>
+      <ul class="list">
+        <li>色条是"电眼定位标记"，用于机器识别切割位置</li>
+        <li>与成分无关（黑色不是化学成分标记）</li>
+        <li>不同颜色只是印刷时的对位标记</li>
+      </ul>
+      <div class="callout">
+        <p>网传"黑色=化学，绿色=天然"是谣言</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/39-toothpaste.jpg" alt="牙膏尾部色条">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">牙膏尾部色条</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">45 / 48</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第44页 - 案例40（dark）：YouTube播放按钮 ====== -->
+<section class="slide dark" id="s43-case40" data-theme="dark" data-layout="left-right">
+  <div class="chrome" data-anim="left"><span>案例 41 · 播放符号</span></div>
+  <div class="grid-2-7-5" style="align-items:center">
+    <div class="col" data-anim="left">
+      <div class="kicker">Case 41</div>
+      <h1 class="h-xl">YouTube播放按钮</h1>
+      <ul class="list">
+        <li>红色来自早期YouTube的"播放"强调色</li>
+        <li>三角形指向右侧：表示"前进"</li>
+        <li>圆角矩形背景增加亲和力</li>
+      </ul>
+      <div class="callout">
+        <p>播放按钮每天被点击超过50亿次</p>
+      </div>
+    </div>
+    <div class="col" data-anim="right">
+      <figure class="tile">
+        <div class="frame-img" onclick="replaceImage(this)">
+          <img src="images/40-youtube.jpg" alt="YouTube播放按钮">
+          <div class="img-replace-btn"><span>替换图片</span></div>
+          <input type="file" class="img-file-input" accept="image/*" onchange="handleImageSelect(this)">
+        </div>
+        <figcaption class="frame-cap"><span class="pf">YouTube播放按钮</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">48 / 50</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 第50页 - 结尾（hero dark） ====== -->
+<section class="slide hero dark" id="s50" data-theme="hero dark" data-layout="hero">
+  <div class="hero-center">
+    <div class="kicker" data-anim="up">Thank You</div>
+    <div class="h-hero" style="font-size:7vw" data-anim>41个设计冷知识，<br>设计无处不在。</div>
+    <div class="lead" data-anim="up" style="margin-top:2vh">从交通标志到数字图标，从日常物品到科技产品——好的设计，让我们从未注意，却时刻受益。</div>
+  </div>
+  <div class="foot">
+    <div class="meta-row">
+      <span>41个设计冷知识</span>
+      <span class="sep"></span>
+      <span class="mono">50 / 50</span>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div id="nav">
+  <button id="nav-btn-prev" aria-label="上一页">&#9664;</button>
+  <!-- dots inserted by JS -->
+  <button id="nav-btn-next" aria-label="下一页">&#9654;</button>
+</div>
+
+<script>
+/* =============== WebGL 双背景 =============== */
+const VS = `attribute vec2 position;void main(){gl_Position=vec4(position,0.0,1.0);}`;
+
+const FS_DARK = `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;uniform vec2 u_mouse;
+vec3 palette(float t,vec3 a,vec3 b,vec3 c,vec3 d){return a+b*cos(6.28318*(c*t+d));}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution.xy;
+  vec2 p=uv*2.0-1.0;p.x*=u_resolution.x/u_resolution.y;
+  vec2 m=u_mouse*2.0-1.0;m.x*=u_resolution.x/u_resolution.y;
+  float md=length(p-m);
+  float mr=sin(md*15.0-u_time*4.0)*exp(-md*3.0);p+=mr*0.08;
+  vec2 p0=p;
+  for(float i=1.0;i<4.0;i++){
+    p.x+=0.1/i*sin(i*3.0*p.y+u_time*0.4)+0.05;
+    p.y+=0.1/i*cos(i*2.0*p.x+u_time*0.3)-0.05;
+  }
+  float r=length(p);float ang=atan(p.y,p.x);
+  vec3 a=vec3(0.12,0.12,0.13);
+  vec3 b=vec3(0.03,0.04,0.05);
+  vec3 c=vec3(1.0,1.0,1.0);
+  vec3 d=vec3(0.1,0.2,0.4);
+  vec3 col=palette(r*1.5+p0.x*0.5+u_time*0.1,a,b,c,d);
+  float disp=sin(r*25.0-u_time*1.5+ang*2.0)*0.5+0.5;
+  col+=vec3(disp*0.015,disp*0.01,disp*0.02);
+  float hi=pow(sin(p.x*4.0+p.y*3.0+u_time)*0.5+0.5,8.0);
+  col+=hi*0.08;
+  vec3 base=vec3(0.05,0.05,0.06);
+  col=mix(base,col,0.85);
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+const FS_LIGHT = `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;uniform vec2 u_mouse;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){
+  vec2 i=floor(p),f=fract(p);
+  float a=hash(i),b=hash(i+vec2(1,0));
+  float c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));
+  vec2 u=f*f*(3.0-2.0*f);
+  return mix(a,b,u.x)+(c-a)*u.y*(1.0-u.x)+(d-b)*u.x*u.y;
+}
+float fbm(vec2 p){
+  float v=0.0,a=0.5;
+  mat2 m=mat2(0.80,0.60,-0.60,0.80);
+  for(int i=0;i<5;i++){v+=a*noise(p);p=m*p*2.02;a*=0.5;}
+  return v;
+}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution.xy;
+  vec2 p=uv;p.x*=u_resolution.x/u_resolution.y;
+  vec2 m=u_mouse;m.x*=u_resolution.x/u_resolution.y;
+  vec2 md=p-m;float dl=length(md);
+  p+=normalize(md+vec2(0.0001))*exp(-dl*5.0)*0.03;
+  vec2 q=vec2(fbm(p*1.8+u_time*0.07),fbm(p*1.8+vec2(5.2,1.3)+u_time*0.06));
+  vec2 r=vec2(fbm(p*2.0+q*1.3+vec2(1.7,9.2)+u_time*0.05),
+              fbm(p*2.0+q*1.3+vec2(8.3,2.8)+u_time*0.04));
+  float f=fbm(p*2.2+r*1.5);
+  vec3 silverDark=vec3(0.86,0.85,0.84);
+  vec3 paper=vec3(0.955,0.945,0.925);
+  vec3 col=mix(silverDark,paper,f);
+  float ph=r.x*2.2+u_time*0.35;
+  col+=vec3(0.78,0.62,0.92)*sin(ph)*0.055;
+  col+=vec3(0.55,0.72,0.95)*sin(ph*0.8+2.0)*0.05;
+  float hl=smoothstep(0.48,0.92,f);
+  col+=hl*0.06;
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+const mouse={x:0.5,y:0.5};
+addEventListener('mousemove',e=>{mouse.x=e.clientX/innerWidth;mouse.y=e.clientY/innerHeight});
+
+function bootGL(canvasId, fsSrc){
+  const canvas=document.getElementById(canvasId);
+  const gl=canvas.getContext('webgl',{alpha:false,antialias:true});
+  if(!gl) return ()=>false;
+  const mk=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh};
+  const prog=gl.createProgram();
+  gl.attachShader(prog,mk(gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,mk(gl.FRAGMENT_SHADER,fsSrc));
+  gl.linkProgram(prog);gl.useProgram(prog);
+  const buf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  const pos=gl.getAttribLocation(prog,'position');
+  gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
+  const lRes=gl.getUniformLocation(prog,'u_resolution');
+  const lT=gl.getUniformLocation(prog,'u_time');
+  const lM=gl.getUniformLocation(prog,'u_mouse');
+  const resize=()=>{
+    const d=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=innerWidth*d;canvas.height=innerHeight*d;
+    gl.viewport(0,0,canvas.width,canvas.height);
+  };
+  addEventListener('resize',resize);resize();
+  return (tSec)=>{
+    gl.uniform2f(lRes,canvas.width,canvas.height);
+    gl.uniform1f(lT,tSec);
+    gl.uniform2f(lM,mouse.x,1-mouse.y);
+    gl.drawArrays(gl.TRIANGLES,0,6);
+    return true;
+  };
+}
+let drawDark=null, drawLight=null, glRAF=0, glT0=Date.now();
+function startGL(){
+  if(window.__lowPowerMode || glRAF) return;
+  if(!drawDark) drawDark=bootGL('bg-dark',FS_DARK);
+  if(!drawLight) drawLight=bootGL('bg-light',FS_LIGHT);
+  glT0=Date.now();
+  function loop(){
+    if(window.__lowPowerMode){glRAF=0;return;}
+    const t=(Date.now()-glT0)/1000;
+    drawDark(t);drawLight(t);
+    glRAF=requestAnimationFrame(loop);
+  }
+  glRAF=requestAnimationFrame(loop);
+}
+function stopGL(){
+  if(glRAF) cancelAnimationFrame(glRAF);
+  glRAF=0;
+}
+startGL();
+addEventListener('ppt-low-power-change', e=>{e.detail.on ? stopGL() : startGL();});
+
+// =============== 导航（仅按钮翻页 + ESC索引 + B低功耗） ===============
+const deck=document.getElementById('deck');
+const slides=deck.querySelectorAll('.slide');
+const nav=document.getElementById('nav');
+const btnPrev=document.getElementById('nav-btn-prev');
+const btnNext=document.getElementById('nav-btn-next');
+let idx=0,total=slides.length,lock=false;
+
+deck.style.width=(total*100)+'vw';
+
+// Insert dots between prev and next buttons
+slides.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className='dot';b.dataset.i=i;b.setAttribute('aria-label','Page '+(i+1));
+  b.onclick=()=>go(i);
+  nav.insertBefore(b, btnNext);
+});
+
+function go(n){
+  if(lock)return;
+  idx=Math.max(0,Math.min(total-1,n));
+  window.__currentSlideIndex = idx;
+  deck.style.transform=`translateX(${-idx*100}vw)`;
+  nav.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  const el=slides[idx];
+  const th=el.dataset.theme || (el.classList.contains('light')?'light':(el.classList.contains('dark')?'dark':'dark'));
+  document.body.classList.toggle('light-bg',th==='light');
+  if(window.__playSlide) setTimeout(()=>window.__playSlide(idx), 450);
+  lock=true;setTimeout(()=>lock=false,700);
+}
+
+// Prev/Next button click handlers
+btnPrev.onclick=()=>go(idx-1);
+btnNext.onclick=()=>go(idx+1);
+
+/* =============== ESC 索引视图 =============== */
+let overviewOn=false;
+const ov=document.createElement('div');
+ov.id='overview';
+ov.style.cssText='position:fixed;inset:0;z-index:100;background:rgba(var(--ink-rgb),.92);backdrop-filter:blur(12px);display:none;overflow-y:auto;padding:4vh 4vw';
+document.body.appendChild(ov);
+
+function buildOverview(){
+  ov.innerHTML='';
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:2vh 1.6vw;max-width:90vw;margin:0 auto';
+  slides.forEach((s,i)=>{
+    const card=document.createElement('div');
+    card.style.cssText='cursor:pointer;border-radius:6px;overflow:hidden;border:2px solid '+(i===idx?'rgba(var(--paper-rgb),.8)':'rgba(var(--paper-rgb),.15)')+';transition:border-color .2s';
+    card.onmouseenter=()=>card.style.borderColor='rgba(var(--paper-rgb),.6)';
+    card.onmouseleave=()=>card.style.borderColor=i===idx?'rgba(var(--paper-rgb),.8)':'rgba(var(--paper-rgb),.15)';
+    const wrap=document.createElement('div');
+    wrap.style.cssText='width:100%;aspect-ratio:16/9;overflow:hidden;position:relative;pointer-events:none;background:'+(s.classList.contains('light')?'var(--paper)':'var(--ink)');
+    const clone=s.cloneNode(true);
+    clone.style.cssText='width:100vw;height:100vh;transform:scale('+(1/4.5)+');transform-origin:top left;position:absolute;top:0;left:0;pointer-events:none';
+    wrap.appendChild(clone);
+    const label=document.createElement('div');
+    label.style.cssText='padding:6px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:.7';
+    label.textContent=(i+1)+' / '+total;
+    card.appendChild(wrap);
+    card.appendChild(label);
+    card.onclick=()=>{toggleOverview();go(i)};
+    grid.appendChild(card);
+  });
+  ov.appendChild(grid);
+}
+
+function toggleOverview(){
+  overviewOn=!overviewOn;
+  if(overviewOn){buildOverview();ov.style.display='block';}
+  else{ov.style.display='none';}
+}
+
+// =============== 视频焦点检测（键盘冲突防护） ===============
+let __videoActive=false;
+function __isVideoFocused(){const el=document.activeElement;return el&&el.tagName==='VIDEO'}
+function __isAnyVideoPlaying(){return document.querySelectorAll('video').some(v=>!v.paused&&!v.ended)}
+function __updateVideoState(){__videoActive=__isVideoFocused()||__isAnyVideoPlaying()}
+document.addEventListener('focusin',__updateVideoState);
+document.addEventListener('focusout',__updateVideoState);
+document.addEventListener('play',__updateVideoState,true);
+document.addEventListener('pause',__updateVideoState,true);
+document.addEventListener('ended',__updateVideoState,true);
+document.addEventListener('mouseenter',e=>{if(e.target&&e.target.closest&&e.target.closest('.video-card'))__videoActive=true},true);
+document.addEventListener('mouseleave',e=>{if(e.target&&e.target.closest&&e.target.closest('.video-card')){setTimeout(()=>{if(!__isVideoFocused()&&!__isAnyVideoPlaying())__videoActive=false},100)}},true);
+
+// 视频卡片点击播放/暂停
+document.addEventListener('click',e=>{
+  const card=e.target.closest('.video-card');if(!card)return;
+  const video=card.querySelector('video');if(!video)return;
+  if(video.paused){video.play().then(()=>{card.classList.add('playing');__videoActive=true}).catch(()=>{})}
+  else{video.pause();card.classList.remove('playing');__updateVideoState()}
+});
+
+// Keyboard: ESC (overview), B (low-power), 空格/方向键受视频状态保护
+addEventListener('keydown',e=>{
+  if(__videoActive&&(e.key===' '||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'))return;
+  if(e.key==='Escape'){e.preventDefault();toggleOverview();return;}
+  if(e.key && e.key.toLowerCase()==='b' && !e.metaKey && !e.ctrlKey && !e.altKey){
+    e.preventDefault();
+    window.__setLowPowerMode(!window.__lowPowerMode);
+    return;
+  }
+});
+
+// Wheel navigation: DISABLED
+// Touch navigation: DISABLED
+
+go(0);
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
+
+<!-- ============ Motion One 动效引擎 ============ -->
+<script type="module">
+let motion;
+try {
+  motion = await import('./assets/motion.min.js');
+} catch(e1) {
+  try {
+    motion = await import('https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm');
+  } catch(e2) {
+    console.warn('[motion] local + CDN both failed, disabling animations', e1, e2);
+    document.querySelectorAll('[data-anim]').forEach(el=>{el.style.opacity='1';el.style.transform='none'});
+    document.querySelectorAll('[data-animate="pipeline"] [data-anim]').forEach(el=>el.style.opacity='1');
+  }
+}
+
+if(motion){
+  const { animate, stagger } = motion;
+  document.body.classList.add('motion-ready');
+  const EASE = [.22, 1, .36, 1];
+  const slides = [...document.querySelectorAll('.slide')];
+  let pipeStep = -1;
+  let lastIdx = -1;
+
+  function resetAnims(slide){
+    slide.querySelectorAll('[data-anim]').forEach(el=>{
+      el.style.opacity='';
+      el.style.transform='';
+    });
+  }
+
+  function revealStatic(slide){
+    resetAnims(slide);
+    document.getAnimations?.().forEach(a=>a.cancel());
+    slide.querySelectorAll('[data-anim]').forEach(el=>{
+      el.style.opacity='1';
+      el.style.transform='none';
+    });
+  }
+
+  function playSlide(i){
+    const slide = slides[i];
+    if(!slide) return;
+    lastIdx = i;
+    const recipe = slide.dataset.animate || (slide.classList.contains('hero') ? 'hero' : 'cascade');
+
+    if(window.__lowPowerMode){
+      revealStatic(slide);
+      return;
+    }
+
+    if(recipe === 'pipeline'){
+      pipeStep = -1;
+      slide.querySelectorAll('[data-anim]').forEach(el=>{
+        el.style.opacity='0.15';
+        el.style.transform='none';
+      });
+      return;
+    }
+
+    resetAnims(slide);
+    const all = [...slide.querySelectorAll('[data-anim]')];
+    if(!all.length) return;
+
+    if(recipe === 'directional'){
+      const lefts  = all.filter(el=>el.dataset.anim==='left');
+      const divs   = all.filter(el=>el.dataset.anim==='divider');
+      const rights = all.filter(el=>el.dataset.anim==='right');
+      const others = all.filter(el=>!['left','right','divider'].includes(el.dataset.anim));
+      if(others.length) animate(others, {opacity:[0,1], y:[12,0]}, {duration:.6, delay:stagger(.1, {start:.15}), easing:EASE});
+      if(lefts.length)  animate(lefts,  {opacity:[0,1], x:[-24,0]}, {duration:.8, delay:.35, easing:EASE});
+      if(divs.length)   animate(divs,   {opacity:[0,.25]},          {duration:.5, delay:.9});
+      if(rights.length) animate(rights, {opacity:[0,1], x:[24,0]},  {duration:.8, delay:1.0, easing:EASE});
+      return;
+    }
+
+    if(recipe === 'quote'){
+      const lines = all.filter(el=>el.dataset.anim==='line');
+      const others = all.filter(el=>el.dataset.anim!=='line');
+      if(others.length) animate(others, {opacity:[0,1], y:[8,0]},    {duration:.6, delay:stagger(.12, {start:.2}), easing:EASE});
+      if(lines.length)  animate(lines,  {opacity:[.35,1], y:[10,0]}, {duration:.8, delay:stagger(.55, {start:.5}), easing:EASE});
+      return;
+    }
+
+    if(recipe === 'hero'){
+      animate(all, {opacity:[0,1], y:[14,0]}, {duration:.9, delay:stagger(.16, {start:.2}), easing:EASE});
+      return;
+    }
+
+    // default: cascade
+    animate(all, {opacity:[0,1], y:[16,0]}, {duration:.75, delay:stagger(.1, {start:.15}), easing:EASE});
+  }
+
+  function pipeAdvance(){
+    if(window.__lowPowerMode) return false;
+    const slide = slides[lastIdx];
+    if(!slide || slide.dataset.animate !== 'pipeline') return false;
+    const steps  = [...slide.querySelectorAll('[data-anim="step"]')];
+    const arrows = [...slide.querySelectorAll('[data-anim="arrow"]')];
+    if(pipeStep >= steps.length - 1) return false;
+    pipeStep++;
+    animate(steps[pipeStep], {opacity:[0.15,1], y:[8,0]}, {duration:.5, easing:EASE});
+    if(pipeStep > 0 && arrows[pipeStep-1]){
+      animate(arrows[pipeStep-1], {opacity:[0.15,.7]}, {duration:.3, delay:.15});
+    }
+    return true;
+  }
+
+  window.__playSlide = playSlide;
+  window.__pipeAdvance = pipeAdvance;
+
+  playSlide(0);
+}
+</script>
+<script>
+// 图片替换功能
+function replaceImage(container) {
+  const fileInput = container.querySelector('.img-file-input');
+  if (fileInput) {
+    fileInput.click();
+  }
+}
+
+function handleImageSelect(input) {
+  const file = input.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = input.parentElement.querySelector('img');
+      if (img) {
+        img.src = e.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+  // 清空input以便可以再次选择同一文件
+  input.value = '';
+}
+
+// ============ 视频弹窗功能 ============
+// 创建视频弹窗DOM
+const videoModal = document.createElement('div');
+videoModal.className = 'video-modal';
+videoModal.innerHTML = `
+  <div class="video-modal-content">
+    <button class="video-modal-close" onclick="closeVideoModal()">&times;</button>
+    <video id="modal-video" controls></video>
+  </div>
+`;
+document.body.appendChild(videoModal);
+
+// 点击弹窗背景关闭
+videoModal.addEventListener('click', function(e) {
+  if (e.target === videoModal) {
+    closeVideoModal();
+  }
+});
+
+// ESC键关闭弹窗
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && videoModal.classList.contains('active')) {
+    closeVideoModal();
+  }
+});
+
+function openVideoModal(videoSrc) {
+  const video = document.getElementById('modal-video');
+  video.src = videoSrc;
+  videoModal.classList.add('active');
+  video.play().catch(() => {});
+}
+
+function closeVideoModal() {
+  const video = document.getElementById('modal-video');
+  video.pause();
+  video.src = '';
+  videoModal.classList.remove('active');
+}
+</script>
+</body>
+</html>
